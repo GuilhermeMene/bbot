@@ -17,9 +17,10 @@ The main signals used in the bot are:
 10. On-balance Volume (OBV).
 
 
-The machine learning models were created using three common classification algorithms:
-1. Random Forest;
-2. Gradient Boosting;
-3. Support Vector Machine (SVM).
+The machine learning models were created using Decision Forests algorithms:
+1. Random Forest and
+2. Gradient Boosting.
 
+The third model was based on Long Short-Term Memory(LSTM).
 
+Desision Forests and LSTM were created using TensorFlow and Yggdrasil Decision Forests.

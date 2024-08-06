@@ -9,14 +9,14 @@ import os
 
 class Indicators:
 
-    def __init__(self, filepath):
+    def __init__(self, filepath, period):
 
         #Read the file
         self.df = pd.read_csv(filepath, delimiter=',')
 
         #Set the output filename
         fname = os.path.split(filepath)
-        file_out = os.path.join(os.getcwd(), "data", "Data_5m_wt_Indicators.csv")
+        file_out = os.path.join(os.getcwd(), "data", f"Data_{period}_wt_Indicators.csv")
 
         self.length = 5
 
@@ -32,6 +32,7 @@ class Indicators:
 
         #Drop NA rows
         self.df = self.df.dropna(axis=0)
+        self.df = self.df.round(2)
 
         #Export the dataframe
         self.df.to_csv(file_out, index=False)
@@ -110,14 +111,15 @@ class Indicators:
 
 if __name__ == "__main__":
 
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 3:
         print("Provide the filename and period of candles.")
         sys.exit(1)
 
     fname = sys.argv[1]
+    period = sys.argv[2]
 
     cwd = os.path.split(os.getcwd())
     base_path = cwd[0]
     data_path = "data"
 
-    Indicators(fname)
+    Indicators(fname, period)

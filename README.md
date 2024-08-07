@@ -19,6 +19,7 @@ The main signals used in the bot are:
 
 The machine learning models were created using Decision Forests algorithms:
 1. Random Forest;
-2. Gradient Boosting.
+2. Gradient Boosting and;
+3. Histogram-Based Gradient Boosting.
 
-Desision Forests and LSTM were created using Scikit-learn.
+Desision Forests were created using Scikit-learn.

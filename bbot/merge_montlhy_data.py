@@ -11,7 +11,7 @@ PATH_DATA = "data"
 
 files = os.listdir(os.path.join(PATH_DATA, period))
 
-column_names = "OpenTime, Open, High, Low, Close, Volume, CloseTime, qAssetVol, Ntrades, TbuybAssetVol, TbuyqAssetVol, Ignore"
+column_names = "OpenTime,Open,High,Low,Close,Volume,CloseTime,qAssetVol,Ntrades,TbuybAssetVol,TbuyqAssetVol,Ignore"
 
 #Create a final file with column of the data
 with open(os.path.join(PATH_DATA, period,f"Data_{period}.csv"), "w") as file:

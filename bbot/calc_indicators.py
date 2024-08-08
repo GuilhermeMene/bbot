@@ -9,15 +9,16 @@ import os
 
 class Indicators:
 
-    def __init__(self, filepath, period):
+    def __init__(self, filepath, fileout):
 
         #Read the file
         self.df = pd.read_csv(filepath, delimiter=',')
 
         #Set the output filename
         fname = os.path.split(filepath)
-        file_out = os.path.join(os.getcwd(), "data", f"Data_{period}_wt_Indicators.csv")
+        file_out = os.path.join(os.getcwd(), "data", fileout)
 
+        #Default length
         self.length = 5
 
         #Set the index of the table
@@ -45,6 +46,48 @@ class Indicators:
         self.close = self.df['Close']
         self.df = pd.concat([self.df, self.close.diff(period).rename(f'Diff_{period}')], axis=1)
 
+        #Create a label for the dataset
+
+    def label_diff_one(self, row):
+        if row['Diff_1'] > 0:
+            val = 1
+        else:
+            val = 0
+
+        return val
+
+    def label_diff_five(self, row):
+        if row['Diff_5'] > 0:
+            val = 1
+        else:
+            val = 0
+
+        return val
+
+    def short_trend(self, row):
+        if row['Open'] > row['Close']:
+            val = 0
+        else:
+            val = 1
+
+        return val
+
+    def five_period_trend(self, row):
+        if row['SMA_5_Open'] > row['SMA_5']:
+            val = 0
+        else:
+            val = 1
+
+        return val
+
+    def SMA_open(self, row):
+        if row['SMA_5'] > row['Open'] :
+            val = 0
+        else:
+            val = 1
+
+        return val
+
     def createIndicators(self):
         """
         Calculate the indicators using the pandas_ta
@@ -52,6 +95,7 @@ class Indicators:
 
         #SMA (5, 10, 20, and 50 periods)
         self.df['SMA_5'] = ta.sma(self.df['Close'], length=5)
+        self.df['SMA_5_Open'] = ta.sma(self.df['Open'], length=5)
         self.df['SMA_10'] = ta.sma(self.df['Close'], length=10)
         self.df['SMA_20'] = ta.sma(self.df['Close'], length=20)
         self.df['SMA_50'] = ta.sma(self.df['Close'], length=50)
@@ -109,6 +153,19 @@ class Indicators:
             self.df['Volume']
         )
 
+        #Set short-term trend
+        self.df['ShortTrend'] = self.df.apply(self.short_trend, axis=1)
+
+        #SMA-Open short state
+        self.df['SMA-Open'] = self.df.apply(self.SMA_open, axis=1)
+
+        #Set the Trend for one period
+        self.df['Trend_1'] = self.df.apply(self.label_diff_one, axis=1)
+
+        #Set the tend for five periods
+        self.df['Trend_5'] = self.df.apply(self.five_period_trend, axis=1)
+
+
 if __name__ == "__main__":
 
     if len(sys.argv) < 3:
@@ -116,10 +173,10 @@ if __name__ == "__main__":
         sys.exit(1)
 
     fname = sys.argv[1]
-    period = sys.argv[2]
+    fileout = sys.argv[2]
 
     cwd = os.path.split(os.getcwd())
     base_path = cwd[0]
     data_path = "data"
 
-    Indicators(fname, period)
+    Indicators(fname, fileout)

@@ -8,7 +8,7 @@ __pycache__/
 
 #Folders
 data/
-ml-models/saved-models
+ml-models/
 
 # Distribution / packaging
 .Python

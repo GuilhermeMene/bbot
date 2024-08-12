@@ -4,9 +4,13 @@ Date: 08/09/2024
 bbot - A Binance bot for Spot trade BTCUSDT
 """
 
+import os
+import sys
+import pandas as pd
 from bbot import logger as log
 from bbot.client import Client
 from bbot import connection_checker as con
+from bbot import strategy
 from binance.spot import Spot
 from binance.error import ClientError
 
@@ -16,74 +20,177 @@ class Bbot:
     def __init__(self, debug=False):
 
         #Set the variables
+        self.symbol = 'BTCUSDT'
+        self.logged = False
         self.operational = False
 
-        try:
-            if debug:
-                self.client = Client()
-                self.client = self.client.debug_client
+        #Get token
+        self.key = os.environ.get('BBOT_KEY')
+        self.secret = os.environ.get('BBOT_SECRET')
+
+        #Get the client for trade
+        if debug:
+            self.client = Client.debug_client()
+            self.logged = True
+        else:
+            self.client = Client.auth_client(key=self.key, secret=self.secret)
+            self.logged = True
+
+        #Get the ping of binance
+        self.ping = con.get_ping()
+        if self.ping < 1:
+            self.operational = True
+
+    def runTask(self):
+        """
+        Method to run the bot on a loop
+        """
+        while True:
+            from bbot.telegram_bot import STATE
+            if STATE == 0:
+                self.cancel_orders()
+                log.logger("Stopping the bot.")
+                continue
             else:
-                self.client = Client()
-                self.client = self.client.auth_client
+                log.status_logger(f"Operational state: {self.operational} : Ping: {self.ping}")
+                self.runBot()
+
+    def runBot(self):
+        """
+        Method to run the pipeline of the Binance Spot Trade Bot.
+        The pipeline is:
+        1. get balances;
+        2. get klines;
+        3. run strategy to define: sell or buy;
+        4. get ticker price and average price;
+        5. set the params of order;
+        6. make order.
+        """
+
+        #Get the balances and save in database
+        btc, usdt = self.get_balances()
+        log.balance_logger(asset='BTC', balance=btc)
+        log.balance_logger(asset='USDT', balance=usdt)
+
+        #Get the klines
+        self.get_klines()
+
+        #Calculate the indicators
+        self.typeOrder = strategy.getStrategy(self.klines)
+
+        #Get the ticker price and average price
+        self.ticker = float(self.client.ticker(self.symbol)['price'])
+        self.avgPrice = float(self.client.avg_price(self.symbol)['price'])
+
+        #Make order
+        orderPrice = self.calcQty()
+        self.params = {
+            'symbol': self.symbol,
+            'side': self.typeOrder,
+            'type': 'MARKET',
+            'timeInForce': 'GTC',
+            'quantity': orderPrice,
+        }
+
+        #Make order
+        try:
+            response = self.make_order()
+            log.trade_logger(response=response)
         except Exception as e:
             log.logger(e)
 
+
+    def calcQty(self):
+        """
+        Calculate the quantity of the order
+        """
+        if self.typeOrder == 'SELL':
+            return float(self.btc_balance)
+        else:
+            return float((self.usdt_balance / self.ticker)*0.95)
+
+
+    def get_klines(self):
+        """
+        Get the klines to calculate the indicators
+        """
         try:
-            self.ping = con.get_ping()
-            if self.ping < 1:
-                self.operational = True
+            klines = self.client.klines(symbol=self.symbol, interval="1m", limit=60)
+
+            column_names = ['OpenTime','Open','High','Low','Close','Volume','CloseTime',
+                            'qAssetVol','Ntrades','TbuybAssetVol','TbuyqAssetVol','Ignore']
+            dtypes = {'OpenTime':'int32',
+                      'Open':'float32',
+                      'High':'float32',
+                      'Low':'float32',
+                      'Close':'float32',
+                      'Volume':'float32',
+                      'CloseTime':'int32',
+                      'qAssetVol':'float32',
+                      'Ntrades':'int32',
+                      'TbuybAssetVol':'float32',
+                      'TbuyqAssetVol':'float32',
+                      'Ignore':'int32'}
+            self.klines = pd.DataFrame(klines, columns=column_names)
+            self.klines = self.klines.astype(dtype=dtypes)
         except Exception as e:
             log.logger(e)
+
+    def get_balances(self):
+        """
+        Get the balance from account
+        """
+        try:
+            self.acc_details = self.client.account(omitZeroBalances="true")
+            self.balances = self.acc_details['balances']
+
+            #Get only the BTC and USDT balances
+            for coin in self.balances:
+                if coin['asset'] == 'BTC':
+                    self.btc_balance = float(coin['free'])
+                elif coin['asset'] == 'USDT':
+                    self.usdt_balance = float(coin['free'])
+        except Exception as e:
+            log.logger(e)
+
+        return self.btc_balance, self.usdt_balance
 
     def make_order(self):
         """
         Create market long order
         """
         try:
-            resp = self.client.new_order(**self.order_params)
-            log.trade_logger(resp, self.order_params)
+            resp = self.client.new_order(**self.params)
+            log.trade_logger(resp)
         except ClientError as error:
             log.error_log(error)
 
-    def cancel_order(self):
+    def cancel_orders(self):
         """
-        Create market long order
+        Cancel openned orders
         """
         try:
-            resp = self.client.new_order(**self.cancel_params)
-            log.trade_logger(resp, self.cancel_params)
+            resp = self.client.cancel_open_orders(symbol=self.symbol)
+            log.logger("Cancelling the openned order.")
         except ClientError as error:
             log.error_log(error)
 
+#Run the bot
+if __name__ == '__main__':
+    from threading import Thread
+    from bbot import telegram_bot
 
+    #Check the sys args
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "debug":
+            bbot = Bbot(debug=True)
+    else:
+        bbot = Bbot()
 
+    #Run first the bbot main
+    bproc = Thread(target=bbot.runTask)
+    bproc.start()
 
-
-
-
-"""
-Pseudo algo:
-
-Main pipeline
-1. Get the signal from latency checker
-2. Get balance (free) and save the balance (SQLite)
-3. Get klines
-4. Calculate the indicators
-5. Check if long or short based on the balance and indicators
-6. Make order (long or short) and save the trade (SQLite)
-7. Sleep the period
-
-Telegram bot pipeline (append thread)
-1. Sign
-2. Get the client
-3. Run background to receive the commands:
-    - check status
-    - get trades
-    - get balance
-    - print trades or not trades
-
-Latency and stability of network
-1. Check the connection with internet
-2. Check the latency from Binance
-3. Send signal to bot to wait or continue operations
-"""
+    #Second run the telegram bot 
+    tproc = Thread(target=telegram_bot.runTelegramBot)
+    tproc.start()

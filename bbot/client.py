@@ -5,28 +5,18 @@ A client code to connect with the Binance exchange
 import logger as log
 from binance.spot import Spot
 import time
+import os
 
-def get_API(debug:bool):
+def get_debug_API(debug:bool):
     """
     Method to read API keys and Secret from env
     """
 
     if debug:
-        envfile = "../env/.debugenv"
-    else:
-        envfile = "../env/.env"
-
-    with open(envfile, "r") as env:
-        line = env.readline()
-        env.close
-
-    api_key = line.split(',')[0]
-    api_secret = line.split(',')[1]
-
-    api = {
-        'api_key': api_key,
-        'api_secret': api_secret
-    }
+        api = {
+        'api_key': os.environ.get('DEBUG_KEY'),
+        'api_secret': os.environ.get('DEBUG_SECRET')
+        }
     return api
 
 
@@ -35,7 +25,8 @@ class Client:
     def __init__(self, debug=False):
 
         try:
-            self.api = get_API(debug)
+            if debug:
+                self.api = get_debug_API(debug)
         except Exception as e:
             log.logger(e)
 
@@ -55,14 +46,14 @@ class Client:
         except Exception as e:
             log.logger(f"Unauthenticated Client error: {e}")
 
-    def auth_client(self):
+    def auth_client(self, key, secret):
         """
         Get an authenticated client for user endpoints
         """
         try:
             self.authClient = Spot(
-                api_key=self.api['api_key'],
-                api_secret= self.api['api_secret']
+                api_key=key,
+                api_secret= secret
             )
             return self.authClient
         except Exception as e:

@@ -4,19 +4,13 @@ Preparing the indicators for the machine learning models
 
 import pandas as pd
 import pandas_ta as ta
-import sys
-import os
 
 class Indicators:
 
-    def __init__(self, filepath, fileout):
+    def __init__(self, dataframe:pd.DataFrame):
 
         #Read the file
-        self.df = pd.read_csv(filepath, delimiter=',')
-
-        #Set the output filename
-        fname = os.path.split(filepath)
-        file_out = os.path.join(os.getcwd(), "data", fileout)
+        self.df = dataframe
 
         #Default length
         self.length = 5
@@ -35,8 +29,14 @@ class Indicators:
         self.df = self.df.dropna(axis=0)
         self.df = self.df.round(2)
 
-        #Export the dataframe
-        self.df.to_csv(file_out, index=False)
+        #Return the dataframe
+        #self.getIndicators()
+
+    def getIndicators(self):
+        """
+        Return the dataframe
+        """
+        return self.df
 
     def calcDiff(self, period):
         """
@@ -164,19 +164,3 @@ class Indicators:
 
         #Set the tend for five periods
         self.df['Trend_5'] = self.df.apply(self.five_period_trend, axis=1)
-
-
-if __name__ == "__main__":
-
-    if len(sys.argv) < 3:
-        print("Provide the filename and period of candles.")
-        sys.exit(1)
-
-    fname = sys.argv[1]
-    fileout = sys.argv[2]
-
-    cwd = os.path.split(os.getcwd())
-    base_path = cwd[0]
-    data_path = "data"
-
-    Indicators(fname, fileout)

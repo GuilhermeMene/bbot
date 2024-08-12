@@ -9,6 +9,7 @@ __pycache__/
 #Folders
 data/
 ml-models/
+sandbox/
 
 # Distribution / packaging
 .Python

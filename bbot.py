@@ -92,14 +92,12 @@ class Bbot:
                 'timeInForce': 'GTC',
                 'quantity': orderQty,
             }
-
             #Make order
             try:
                 response = self.make_order()
                 log.trade_logger(response=response)
             except Exception as e:
                 log.logger(e)
-
 
     def calcQty(self):
         """

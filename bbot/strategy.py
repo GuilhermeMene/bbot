@@ -176,22 +176,3 @@ def getStrategy(klines:pd.DataFrame):
                 return 'SELL'
     except Exception as e:
         log.logger(e)
-
-    """
-    TODO
-    1. create a list for indicators (0: sell and 1: buy)
-    2. get the TA indicators:
-        1. MA 5 cross Ma 10
-        2. MA 5 cross MA 20
-        3. BBands
-        4. SO
-        5. RSI
-        6. Awesome Oscillator
-    3. get the Machine learning indicators
-        1. Gradient Boosting
-        2. Histogram-Based Gradient Boosting
-    4. count the list indicators
-    5. return sell or buy string
-    """
-
-

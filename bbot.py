@@ -77,37 +77,44 @@ class Bbot:
 
         #Calculate the indicators
         self.typeOrder = strategy.getStrategy(self.klines)
-
-        #Get the ticker price and average price
-        self.ticker = float(self.client.ticker(self.symbol)['price'])
-        self.avgPrice = float(self.client.avg_price(self.symbol)['price'])
-
         #Make order
-        orderPrice = self.calcQty()
-        self.params = {
-            'symbol': self.symbol,
-            'side': self.typeOrder,
-            'type': 'MARKET',
-            'timeInForce': 'GTC',
-            'quantity': orderPrice,
-        }
+        orderQty = self.calcQty()
 
-        #Make order
-        try:
-            response = self.make_order()
-            log.trade_logger(response=response)
-        except Exception as e:
-            log.logger(e)
+        if self.typeOrder != 'Neutral' and self.doTrade:
+            self.params = {
+                'symbol': self.symbol,
+                'side': self.typeOrder,
+                'type': 'MARKET',
+                'timeInForce': 'GTC',
+                'quantity': orderQty,
+            }
+
+            #Make order
+            try:
+                response = self.make_order()
+                log.trade_logger(response=response)
+            except Exception as e:
+                log.logger(e)
 
 
     def calcQty(self):
         """
         Calculate the quantity of the order
         """
+        self.doTrade = False
         if self.typeOrder == 'SELL':
-            return float(self.btc_balance)
+            if self.btc_balance > 0.000001:
+                self.doTrade = True
+                return float(self.btc_balance)
+            else:
+                self.doTrade = False
         else:
-            return float((self.usdt_balance / self.ticker)*0.95)
+            buy_amount = float((self.usdt_balance / self.ticker)*0.95)
+            if buy_amount > 0.000001:
+                self.doTrade = True
+                return buy_amount
+            else:
+                self.doTrade = False
 
 
     def get_klines(self):
@@ -191,6 +198,6 @@ if __name__ == '__main__':
     bproc = Thread(target=bbot.runTask)
     bproc.start()
 
-    #Second run the telegram bot 
+    #Second run the telegram bot
     tproc = Thread(target=telegram_bot.runTelegramBot)
     tproc.start()

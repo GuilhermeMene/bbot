@@ -25,8 +25,9 @@ class Bbot:
         self.operational = False
 
         #Get token
-        self.key = os.environ.get('BBOT_KEY')
-        self.secret = os.environ.get('BBOT_SECRET')
+        if not debug:
+            self.key = os.environ.get('BBOT_KEY')
+            self.secret = os.environ.get('BBOT_SECRET')
 
         #Get the client for trade
         if debug:
@@ -74,6 +75,9 @@ class Bbot:
 
         #Get the klines
         self.get_klines()
+
+        #Get the ticker price
+        self.ticker = float(self.client.ticker(self.symbol)['price'])
 
         #Calculate the indicators
         self.typeOrder = strategy.getStrategy(self.klines)

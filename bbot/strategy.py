@@ -2,9 +2,9 @@
 Strategy based on the indicators to make long or short order
 """
 
+from bbot import logger as log
 from bbot.calc_indicators import Indicators
 import pandas as pd
-import logger as log
 import os
 import pickle
 import numpy as np
@@ -36,8 +36,6 @@ def get_trend(data:list):
 
         return trend_signal
 
-
-
 def get_cross(fast:list, slow:list):
     """
     Calculate if the line cross another
@@ -45,13 +43,12 @@ def get_cross(fast:list, slow:list):
 
     if len(fast) != len(slow):
         log.logger("Strategy: The length of the fast and slow is different.")
+        return 'Neutral'
     else:
         if fast[0] > slow[0] and fast[-1] < slow[-1]:
-            signal_cross = 'Down'
+            return 'Down'
         elif fast[0] < slow[0] and fast[-1] > slow[-1]:
-            signal_cross = 'Up'
-
-        return signal_cross
+            return 'Up'
 
 def getStrategy(klines:pd.DataFrame):
     """
@@ -73,9 +70,9 @@ def getStrategy(klines:pd.DataFrame):
     tail_df = last_rec.tail(1)
 
     try:
-        sig_five_ten = get_cross(last_rec['SMA_5'].to_list(), last_rec['SMA_10'])
+        sig_five_ten = get_cross(last_rec['SMA_5'].to_list(), last_rec['SMA_10'].to_list())
         ind_list.append(sig_five_ten)
-        sig_five_twenty = get_cross(last_rec['SMA_5'].to_list(), last_rec['SMA_20'])
+        sig_five_twenty = get_cross(last_rec['SMA_5'].to_list(), last_rec['SMA_20'].to_list())
         ind_list.append(sig_five_twenty)
 
         #BBands
@@ -157,7 +154,7 @@ def getStrategy(klines:pd.DataFrame):
 
     try:
         if len(ind_list) <= 0:
-            log.logger("Strategy, a error occurred withe strategy.")
+            log.logger("Strategy, a error occurred with strategy.")
 
             return 'Neutral'
         else:

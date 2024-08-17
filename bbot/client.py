@@ -46,16 +46,16 @@ class Client:
         except Exception as e:
             log.logger(f"Unauthenticated Client error: {e}")
 
-    def auth_client(self, key, secret):
+    def auth_client(key, secret):
         """
         Get an authenticated client for user endpoints
         """
         try:
-            self.authClient = Spot(
+            authClient = Spot(
                 api_key=key,
                 api_secret= secret
             )
-            return self.authClient
+            return authClient
         except Exception as e:
             log.logger(f"Authenticated Client error: {e}")
 

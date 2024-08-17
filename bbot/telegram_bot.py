@@ -7,7 +7,7 @@ import asyncio
 from datetime import datetime
 from telebot.async_telebot import AsyncTeleBot
 from bbot.client import Client
-import logger as log
+from bbot import logger as log
 
 #import bbot
 pdir = os.path.dirname(os.path.realpath(__file__))

@@ -49,10 +49,10 @@ def get_cross(fast:list, slow:list):
             return 'Down'
         elif fast[0] < slow[0] and fast[-1] > slow[-1]:
             return 'Up'
-        
+
 def get_bb_ind(dataframe:pd.DataFrame):
     """
-    Method to get the Bollinger Bands indicator 
+    Method to get the Bollinger Bands indicator
     """
     bb_list = []
     down = 0
@@ -66,7 +66,7 @@ def get_bb_ind(dataframe:pd.DataFrame):
                 bb_list.append('Up')
             else:
                 bb_list.append('Neutral')
-        
+
         for i in range(0, len(bb_list)):
             if bb_list[i] == 'Down':
                 down += 1
@@ -106,15 +106,15 @@ def getStrategy(klines:pd.DataFrame):
 
     try:
         sig_five_ten = get_cross(last_rec['SMA_5'].to_list(), last_rec['SMA_10'].to_list())
-        ind_list.append(sig_five_ten) #Append twice due the weight of these indicator
+        ind_list.append(sig_five_ten) #Append twice due the weight of this indicator
         ind_list.append(sig_five_ten)
         sig_five_twenty = get_cross(last_rec['SMA_5'].to_list(), last_rec['SMA_20'].to_list())
-        ind_list.append(sig_five_twenty) #Append twice due the weight of these indicator
+        ind_list.append(sig_five_twenty) #Append twice due the weight of this indicator
         ind_list.append(sig_five_twenty)
 
         #BBands
         bb_ind = get_bb_ind(ind_df.tail(10))
-        ind_list.append(bb_ind) #Append twice due the weight of these indicator
+        ind_list.append(bb_ind) #Append twice due the weight of this indicator
         ind_list.append(bb_ind)
 
         #SO

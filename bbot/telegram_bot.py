@@ -6,7 +6,7 @@ import os
 import asyncio
 from datetime import datetime
 from telebot.async_telebot import AsyncTeleBot
-from client import Client
+from bbot.client import Client
 import logger as log
 
 #import bbot

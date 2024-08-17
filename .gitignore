@@ -6,9 +6,13 @@ __pycache__/
 # C extensions
 *.so
 
+#Mac files
+.DS_Store
+
 #Folders
 data/
 ml-models/
+sandbox/
 
 # Distribution / packaging
 .Python

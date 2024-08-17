@@ -2,7 +2,7 @@
 A client code to connect with the Binance exchange
 """
 
-import logger as log
+from bbot import logger as log
 from binance.spot import Spot
 import time
 import os

@@ -137,7 +137,7 @@ async def get_ping(message):
     await bot.send_message(message.chat.id, text)
 
 #Set the STOP
-@bot.messsage_handler(commands=['stop'])
+@bot.message_handler(commands=['stop'])
 async def set_stop(message):
     """
     Set the stop fopr the BOT

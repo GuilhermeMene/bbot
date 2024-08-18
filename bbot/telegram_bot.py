@@ -154,4 +154,5 @@ async def echo_all(message):
     await bot.send_message(message.chat.id, usage)
 
 
+print("Running the bot...")
 asyncio.run(bot.polling())

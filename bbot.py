@@ -7,7 +7,6 @@ bbot - A Binance bot for Spot trade BTCUSDT
 import os
 import sys
 import time
-import asyncio
 import pandas as pd
 from bbot import logger as log
 from bbot.client import Client
@@ -205,7 +204,7 @@ if __name__ == '__main__':
 
     #First run the telegram bot
     print("Starting telegram bot...")
-    asyncio.run(telegram_bot.runTelegramBot)
+    telegram_bot.runTelegramBot()
 
     #Run the bot using 1 minute interval
     while True:

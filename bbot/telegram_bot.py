@@ -104,13 +104,13 @@ async def get_last_trade(message):
     try:
         last_trade = log.get_last_trade()
 
-        text = f"Time: {last_trade[1]} \n \
-                Symbol: {last_trade[2]} \n \
-                Price: {last_trade[4]} \n \
-                origQty: {last_trade[5]} \n \
-                execQty: {last_trade[6]} \n \
-                Type: {last_trade[7]} \n \
-                Side: {last_trade[8]}"
+        text = f"Time: {last_trade[0]} \n \
+                Symbol: {last_trade[1]} \n \
+                Price: {last_trade[3]} \n \
+                origQty: {last_trade[4]} \n \
+                execQty: {last_trade[5]} \n \
+                Type: {last_trade[6]} \n \
+                Side: {last_trade[7]}"
     except:
         text = f"An error eccurred. The last trade cannot be accessed."
 

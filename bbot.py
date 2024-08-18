@@ -24,6 +24,7 @@ class Bbot:
         self.symbol = 'BTCUSDT'
         self.logged = False
         self.operational = False
+        self.trade_rate = 0.70
 
         #Set the varibles of the balance
         self.btc_balance = 0
@@ -90,24 +91,43 @@ class Bbot:
 
         #Calculate the indicators
         self.typeOrder = strategy.getStrategy(self.klines)
-        #Make order
-        orderQty = self.calcQty()
+        print(F"Strategy points to {self.typeOrder} order.")
+
+        orderQty = round(self.calcQty(), 6)
+
+        print("The quantity of the order: ", orderQty)
 
         if self.typeOrder != 'Neutral' and self.doTrade:
-            self.params = {
-                'symbol': self.symbol,
-                'side': self.typeOrder,
-                'type': 'MARKET',
-                'timeInForce': 'GTC',
-                'quantity': orderQty,
-            }
+
+            if self.typeOrder == 'BUY':
+                self.params = {
+                    'symbol': self.symbol,
+                    'side': self.typeOrder,
+                    'type': 'MARKET',
+                    'quoteOrderQty': orderQty,
+                }
+            else:
+                self.params = {
+                    'symbol': self.symbol,
+                    'side': self.typeOrder,
+                    'type': 'MARKET',
+                    'quantity': orderQty,
+                }
             #Make order
             try:
                 print(f"Making {self.typeOrder} order...")
                 response = self.make_order()
-                log.trade_logger(response=response)
+                if type(response) is dict:
+                    log.trade_logger(response=response)
             except Exception as e:
-                log.logger(e)
+                log.logger(f"Run Bot task error: {e}")
+
+            current_time = time.localtime()
+            current_time = time.strftime("%H:%M:%S", current_time)
+            print(f"Time: {current_time}")
+
+        print("*** Sleeping...")
+        time.sleep(65)
 
     def calcQty(self):
         """
@@ -117,12 +137,12 @@ class Bbot:
         if self.typeOrder == 'SELL':
             if self.btc_balance > 0.000001:
                 self.doTrade = True
-                return float(self.btc_balance)
+                return float(self.btc_balance*self.trade_rate)
             else:
                 self.doTrade = False
         else:
-            buy_amount = float((self.usdt_balance / self.ticker)*0.95)
-            if buy_amount > 0.000001:
+            buy_amount = float(self.usdt_balance*self.trade_rate)
+            if buy_amount > 5.0:
                 self.doTrade = True
                 return buy_amount
             else:
@@ -153,7 +173,7 @@ class Bbot:
             self.klines = pd.DataFrame(klines, columns=column_names)
             self.klines = self.klines.astype(dtype=dtypes)
         except Exception as e:
-            log.logger(e)
+            log.logger(f"Getting klines error: {e}")
 
     def get_balances(self):
         """
@@ -170,7 +190,7 @@ class Bbot:
                 elif coin['asset'] == 'USDT':
                     self.usdt_balance = float(coin['free'])
         except Exception as e:
-            log.logger(e)
+            log.logger(f"Getting balances error: {e}")
 
         return self.btc_balance, self.usdt_balance
 
@@ -180,7 +200,8 @@ class Bbot:
         """
         try:
             resp = self.client.new_order(**self.params)
-            log.trade_logger(resp)
+            if type(resp) is dict:
+                log.trade_logger(resp)
         except ClientError as error:
             log.error_log(error)
 
@@ -221,16 +242,3 @@ if __name__ == '__main__':
         hold_threading = False
         for t in threads:
             t.join()
-
-        current_time = time.localtime()
-        current_time = time.strftime("%H:%M:%S", current_time)
-        print(f"Time: {current_time}")
-
-        print("*** Sleeping...")
-        time.sleep(65)
-
-
-
-
-
-

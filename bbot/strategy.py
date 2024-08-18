@@ -13,20 +13,19 @@ def get_trend(data:list):
     """
     Calculate the trend based on the last three records
     """
+    trend_signal = 'Neutral'
+    new_data = []
+    for i in range(0, len(data)):
+        new_data.append(data[i])
 
     if len(data) < 3:
         log.logger("Strategy: The length of the data is lower than 3.")
 
     elif len(data) > 3:
-        new_data = []
-        for i in len(0, 2):
-            new_data.append(data[i])
         if new_data[0] < new_data[1] and new_data[1] < new_data[2]:
             trend_signal = 'Up'
         elif new_data[0] > new_data[1] and new_data[1] > new_data[2]:
             trend_signal = 'Down'
-
-        return trend_signal
 
     elif len(data) == 3:
         if new_data[0] < new_data[1] and new_data[1] < new_data[2]:
@@ -34,7 +33,7 @@ def get_trend(data:list):
         elif new_data[0] > new_data[1] and new_data[1] > new_data[2]:
             trend_signal = 'Down'
 
-        return trend_signal
+    return trend_signal
 
 def get_cross(fast:list, slow:list):
     """
@@ -118,20 +117,20 @@ def getStrategy(klines:pd.DataFrame):
         ind_list.append(bb_ind)
 
         #SO
-        if tail_df['STOCHk_14_3_3'] < 20 and tail_df['STOCHd_14_3_3'] < 20:
+        if tail_df['STOCHk_14_3_3'].values < 20 or tail_df['STOCHd_14_3_3'].values < 20:
             ind_list.append('Up')
-        elif tail_df['STOCHk_14_3_3'] > 80 and tail_df['STOCHd_14_3_3'] > 80:
+        elif tail_df['STOCHk_14_3_3'].values > 80 or tail_df['STOCHd_14_3_3'].values > 80:
             ind_list.append('Down')
         else:
-            pass
+            ind_list.append('Neutral')
 
         #RSI
-        if tail_df['RSI_5'] < 30:
+        if tail_df['RSI_5'].values < 30:
             ind_list.append('Up')
-        elif tail_df['RSI_5'] > 70:
+        elif tail_df['RSI_5'].values > 70:
             ind_list.append('Down')
         else:
-            pass
+            ind_list.append('Neutral')
 
         #AO
         ao = get_trend(last_rec['AO'].tail(3).to_list())
@@ -140,16 +139,17 @@ def getStrategy(klines:pd.DataFrame):
         elif ao == 'Up':
             ind_list.append('Up')
         else:
-            pass
+            ind_list.append('Neutral')
 
     except Exception as e:
-        log.logger(e)
+        log.logger(f"Classical indicators error: {e}")
 
 
     #get the machine learning indicators
     try:
-
-        last = last_rec.drop(labels=['Trend_1'])
+        col_to_drop = ['OpenTime', 'Diff_1', 'qAssetVol', 'TbuybAssetVol', 'TbuyqAssetVol', 'Ignore', 'Trend_1']
+        last = last_rec.drop(labels=col_to_drop, axis=1)
+        last = last.tail(1)
         last = np.array(last.values)
         last = last.reshape(1, -1)
 
@@ -183,7 +183,7 @@ def getStrategy(klines:pd.DataFrame):
             pass
 
     except Exception as e:
-        log.logger(e)
+        log.logger(f"Strategy error: {e}")
 
 
     try:

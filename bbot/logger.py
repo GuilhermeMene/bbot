@@ -3,13 +3,12 @@ A datalog for the trade bot operations
 """
 
 import os
-import sqlite3 as sql
 import time
 
 directory = os.getcwd()
 op_log = os.path.join(directory, 'Op-logs.txt')
-
-database = os.path.join(directory, 'Log_database.db')
+trade_log = os.path.join(directory, 'Trade-logs.csv')
+balance_log = os.path.join(directory, 'Balance-logs.csv')
 
 def logger(log:str):
     """
@@ -45,51 +44,45 @@ def trade_logger(response):
     Datalog of trades and responses from submitted orders
     """
     try:
-        #Connect to the database
-        con = sql.connect(database=database)
-        cursor = con.cursor()
-
+        #Write a csv file
         logtime = str(int(time.time()))
 
-        #Execute the script
-        cursor.executescript(f'''CREATE TABLE IF NOT EXISTS trades (Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                             Time INT NOT NULL,
-                             Symbol VARCHAR NOT NULL,
-                             ClientOrderId VARCHAR NOT NULL,
-                             Price REAL NOT NULL,
-                             origQty RAL NOT NULL,
-                             execQty REAL NOT NULL,
-                             Type VARCHAR NOT NULL,
-                             Side VARCHAR NOT NULL);
-                             INSERT OR IGNORE INTO trades ({logtime}, {response['symbol']},
-                             {response['clientOrderId']}, {response['price']}, {response['origQty']},
-                             {response['executedQty']}, {response['type']}, {response['side']});''')
-        con.commit()
-        con.close()
+        head = f"Time, Symbol, ClientOrderId, Price, origQty, execQty, Type, Side"
+        line = f"{logtime}, {response['symbol']}, {response['clientOrderId']}, {response['price']}, \
+                {response['origQty']},{response['executedQty']}, {response['type']}, {response['side']}"
+
+        if os.path.exists(trade_log):
+            with open(trade_log, 'a') as tl:
+                tl.write(line + "\n")
+        else:
+            with open(trade_log, 'a') as tl:
+                tl.write(head + "\n")
+                tl.write(line + "\n")
+
     except Exception as e:
-        logger(e)
+        logger(f"Trade logger error: {e}")
 
 def balance_logger(asset:str, balance:float):
     """
     Save the asset balances in the database
     """
     try:
-        #Connect to the database
-        con = sql.connect(database=database)
-        cursor = con.cursor()
-
+        #Write the balance to csv
         logtime = str(int(time.time()))
 
-        #Execute the script
-        cursor.executescript(f'''CREATE TABLE IF NOT EXISTS balances (Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                             Time INT NOT NULL,
-                             Asset VARCHAR NOT NULL,
-                             Balance REAL NOT NULL);
-                             INSERT OR IGNORE INTO balances ({logtime}, {asset}, {balance})''')
-        con.commit()
-        con.close()
+        head = f"Time, Asset, Balance"
+        line = f"{logtime}, {asset}, {balance}"
+
+        if os.path.exists(balance_log):
+            with open(balance_log, 'a') as bl:
+                bl.write(line + "\n")
+        else:
+            with open(balance_log, 'a') as bl:
+                bl.write(head + "\n")
+                bl.write(line + "\n")
+
     except Exception as e:
-        logger(e)
+        logger(f"Balance logger error: {e}")
 
 def get_last_trade():
     """
@@ -97,16 +90,10 @@ def get_last_trade():
     """
 
     try:
-        #Conenct to the database
-        con = sql.connect(database=database)
-        cursor = con.cursor()
-
-        #get the last trade
-        cursor.execute("SELECT * FROM trades ORDER BY Id DESC LIMIT 1")
-        last_trade = cursor.fetchone()
-
-        con.commit()
-        con.close()
+        with open(trade_log, 'r') as trade:
+            for line in trade:
+                pass
+            last_trade = list(line.split(','))
 
         return last_trade
 

@@ -3,6 +3,10 @@ A telegram bot for follow the trade bot activity
 """
 
 import os
+import sys
+#add the library to path
+sys.path.append(os.path.split(os.getcwd())[0])
+
 import asyncio
 from datetime import datetime
 from telebot.async_telebot import AsyncTeleBot

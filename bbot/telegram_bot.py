@@ -6,7 +6,7 @@ import os
 import asyncio
 from datetime import datetime
 from telebot.async_telebot import AsyncTeleBot
-from bbot.client import Client
+from binance.spot import Spot
 from bbot import logger as log
 from bbot import state
 
@@ -20,7 +20,7 @@ TOKEN = os.environ.get('BBOT_TOKEN')
 KEY = os.environ.get('CB_KEY')
 SECRET = os.environ.get('CB_SECRET')
 
-client = Client.auth_client(key=KEY, secret=SECRET)
+client = Spot(key=KEY, secret=SECRET)
 
 #Set the bot
 bot = AsyncTeleBot(TOKEN)

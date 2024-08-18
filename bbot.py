@@ -195,9 +195,6 @@ if __name__ == '__main__':
     from threading import Thread
     from bbot import telegram_bot
 
-    #Activating the tracemalloc
-    os.environ['PYTHONTRACEMALLOC'] = 1
-
     #Check the sys args
     if len(sys.argv) > 1:
         if sys.argv[1] == "debug":

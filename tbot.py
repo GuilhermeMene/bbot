@@ -10,9 +10,6 @@ from binance.spot import Spot
 from bbot import logger as log
 from bbot import state
 
-#import bbot
-pdir = os.path.dirname(os.path.realpath(__file__))
-
 #Get the token
 TOKEN = os.environ.get('BBOT_TOKEN')
 
@@ -50,23 +47,21 @@ async def get_status(message):
     Method to get the current status of the bot
     """
     try:
-        dir = os.getcwd()
-        with open(os.path.join(dir, 'Status-logs.txt'), "r") as st:
+        with open('Status-logs.txt', "r") as st:
             for line in st:
                 pass
             last_status = line
-            status = last_status.split(':')
+        status = list(last_status.split(':'))
 
-            last_record = datetime.fromtimestamp(status[0])
-
-            if STATE == 1:
-                st = "Running"
-            else:
-                st = "Stopped"
+        if state.STATE == 1:
+            st = "Able to run"
+        else:
+            st = "Stopped"
 
         text = f"The operational state is : {st} \n \
                 The operational condition is: {status[2]} \n \
-                The last event was recorded at: {last_record}."
+                The last event was recorded at: {status[0]}."
+
     except:
         text = 'An error occurred. The status cannot be defined.'
 
@@ -79,17 +74,13 @@ async def get_balance(message):
     Method to get the balance of the wallet
     """
     try:
-        account = client.account(omitZeroBalances="true")
-        balances = account['balances']
+        with open('Balance-logs.csv', 'r') as bl:
+            for line in bl:
+                pass
+            last_line = list(line.split(','))
 
-        for bal in balances:
-            if bal['asset'] == 'BTC':
-                btc = float(bal['free'])
-            elif bal['asset'] == 'USDT':
-                usdt = float(bal['free'])
+        text = f"BTC balance: {last_line[1]}, and USDT balance: {last_line[2]}"
 
-        text = f"BTC is: {round(btc, 2)} and \n \
-                USDT is: {round(usdt, 2)}."
     except:
         text = "An error occurred. The balance cannot be accessed."
 
@@ -104,15 +95,21 @@ async def get_last_trade(message):
     try:
         last_trade = log.get_last_trade()
 
-        text = f"Time: {last_trade[0]} \n \
-                Symbol: {last_trade[1]} \n \
-                Price: {last_trade[3]} \n \
-                origQty: {last_trade[4]} \n \
-                execQty: {last_trade[5]} \n \
-                Type: {last_trade[6]} \n \
-                Side: {last_trade[7]}"
+        if last_trade == "File not found":
+            text = "The trade record not exists."
+
+        else:
+            text = f"Time: {last_trade[0]} \n \
+                    Symbol: {last_trade[1]} \n \
+                    Price: {last_trade[3]} \n \
+                    origQty: {last_trade[4]} \n \
+                    execQty: {last_trade[5]} \n \
+                    Type: {last_trade[6]} \n \
+                    Side: {last_trade[7]}"
     except:
         text = f"An error eccurred. The last trade cannot be accessed."
+
+    await bot.send_message(message.chat.id, text)
 
 #Get the ping from Binance
 @bot.message_handler(commands=['ping'])

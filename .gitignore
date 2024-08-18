@@ -10,7 +10,8 @@ __pycache__/
 .DS_Store
 
 #Database and logs files
-Log_database.db
+Balance-logs.txt
+Trade-logs.txt
 Op-logs.txt
 Status-logs.txt
 

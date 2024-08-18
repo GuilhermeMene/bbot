@@ -76,58 +76,64 @@ class Bbot:
         5. set the params of order;
         6. make order.
         """
+        from bbot import state
 
-        #Get the balances and save in database
-        print("Starting task...")
-        btc, usdt = self.get_balances()
-        log.balance_logger(asset='BTC', balance=btc)
-        log.balance_logger(asset='USDT', balance=usdt)
+        if state.STATE == 1:
 
-        #Get the klines
-        self.get_klines()
+            #Get the balances and save in database
+            print("Starting task...")
+            btc, usdt = self.get_balances()
+            log.balance_logger(btc=btc, usdt=usdt)
 
-        #Get the ticker price
-        self.ticker = float(self.client.ticker_price(self.symbol)['price'])
+            #Get the klines
+            self.get_klines()
 
-        #Calculate the indicators
-        self.typeOrder = strategy.getStrategy(self.klines)
-        print(F"Strategy points to {self.typeOrder} order.")
+            #Get the ticker price
+            self.ticker = float(self.client.ticker_price(self.symbol)['price'])
 
-        orderQty = round(self.calcQty(), 6)
+            #Calculate the indicators
+            self.typeOrder = strategy.getStrategy(self.klines)
+            print(F"Strategy points to {self.typeOrder} order.")
 
-        print("The quantity of the order: ", orderQty)
+            orderQty = round(self.calcQty(), 4)
 
-        if self.typeOrder != 'Neutral' and self.doTrade:
+            print("The quantity of the order: ", orderQty)
+            print("Do trade ? ", self.doTrade)
 
-            if self.typeOrder == 'BUY':
-                self.params = {
-                    'symbol': self.symbol,
-                    'side': self.typeOrder,
-                    'type': 'MARKET',
-                    'quoteOrderQty': orderQty,
-                }
-            else:
-                self.params = {
-                    'symbol': self.symbol,
-                    'side': self.typeOrder,
-                    'type': 'MARKET',
-                    'quantity': orderQty,
-                }
-            #Make order
-            try:
-                print(f"Making {self.typeOrder} order...")
-                response = self.make_order()
-                if type(response) is dict:
-                    log.trade_logger(response=response)
-            except Exception as e:
-                log.logger(f"Run Bot task error: {e}")
+            if self.typeOrder != 'Neutral' and self.doTrade:
 
-            current_time = time.localtime()
-            current_time = time.strftime("%H:%M:%S", current_time)
-            print(f"Time: {current_time}")
+                if self.typeOrder == 'BUY':
+                    self.params = {
+                        'symbol': self.symbol,
+                        'side': self.typeOrder,
+                        'type': 'MARKET',
+                        'quoteOrderQty': orderQty,
+                    }
+                else:
+                    self.params = {
+                        'symbol': self.symbol,
+                        'side': self.typeOrder,
+                        'type': 'MARKET',
+                        'quantity': orderQty,
+                    }
+                #Make order
+                try:
+                    print(f"Making {self.typeOrder} order...")
+                    response = self.make_order()
+                    if type(response) is dict:
+                        log.trade_logger(response=response)
+                except Exception as e:
+                    log.logger(f"Run Bot task error: {e}")
 
-        print("*** Sleeping...")
-        time.sleep(65)
+                current_time = time.localtime()
+                current_time = time.strftime("%H:%M:%S", current_time)
+                print(f"Time: {current_time}")
+
+            print("*** Sleeping...")
+            time.sleep(65)
+
+        else:
+            time.sleep(60)
 
     def calcQty(self):
         """
@@ -135,9 +141,10 @@ class Bbot:
         """
         self.doTrade = False
         if self.typeOrder == 'SELL':
+            sell_amount = float(self.btc_balance*self.trade_rate)
             if self.btc_balance > 0.000001:
                 self.doTrade = True
-                return float(self.btc_balance*self.trade_rate)
+                return sell_amount
             else:
                 self.doTrade = False
         else:

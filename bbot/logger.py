@@ -62,7 +62,7 @@ def trade_logger(response):
     except Exception as e:
         logger(f"Trade logger error: {e}")
 
-def balance_logger(asset:str, balance:float):
+def balance_logger(btc:float, usdt:float):
     """
     Save the asset balances in the database
     """
@@ -70,8 +70,8 @@ def balance_logger(asset:str, balance:float):
         #Write the balance to csv
         logtime = str(int(time.time()))
 
-        head = f"Time, Asset, Balance"
-        line = f"{logtime}, {asset}, {balance}"
+        head = f"Time, BTC, USDT"
+        line = f"{logtime}, {btc}, {usdt}"
 
         if os.path.exists(balance_log):
             with open(balance_log, 'a') as bl:
@@ -90,12 +90,16 @@ def get_last_trade():
     """
 
     try:
-        with open(trade_log, 'r') as trade:
-            for line in trade:
-                pass
-            last_trade = list(line.split(','))
+        if os.path.exists(trade_log):
 
-        return last_trade
+            with open(trade_log, 'r') as trade:
+                for line in trade:
+                    pass
+                last_trade = list(line.split(','))
+
+            return last_trade
+        else:
+            return "File not found"
 
     except Exception as e:
         logger(e)

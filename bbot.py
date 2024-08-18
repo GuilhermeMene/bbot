@@ -25,6 +25,10 @@ class Bbot:
         self.logged = False
         self.operational = False
 
+        #Set the varibles of the balance
+        self.btc_balance = 0
+        self.usdt_balance = 0
+
         #Get token
         if not debug:
             self.key = os.environ.get('BBOT_KEY')
@@ -51,7 +55,7 @@ class Bbot:
         Method to run the bot on a loop
         """
         while True:
-            from bbot.telegram_bot import STATE
+            from bbot.state import STATE
             if STATE == 0:
                 self.cancel_orders()
                 log.logger("Stopping the bot.")
@@ -193,7 +197,6 @@ class Bbot:
 #Run the bot
 if __name__ == '__main__':
     from threading import Thread
-    from bbot import telegram_bot
 
     #Check the sys args
     if len(sys.argv) > 1:

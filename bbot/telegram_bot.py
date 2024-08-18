@@ -6,8 +6,9 @@ import os
 import asyncio
 from datetime import datetime
 from telebot.async_telebot import AsyncTeleBot
-from client import Client
-import logger as log
+from bbot.client import Client
+from bbot import logger as log
+from bbot import state
 
 #import bbot
 pdir = os.path.dirname(os.path.realpath(__file__))
@@ -20,9 +21,6 @@ KEY = os.environ.get('CB_KEY')
 SECRET = os.environ.get('CB_SECRET')
 
 client = Client.auth_client(key=KEY, secret=SECRET)
-
-#Set the state for running bot
-STATE = 1
 
 #Set the bot
 bot = AsyncTeleBot(TOKEN)
@@ -143,7 +141,7 @@ async def set_stop(message):
     Set the stop fopr the BOT
     """
     try:
-        STATE = 0
+        state.stop_state()
         text = "The bot will be stopped in the next loop (~ 1 minute)."
     except:
         text = "An error occurred. The bot will continue running."

@@ -52,7 +52,7 @@ def trade_logger(response):
         logtime = str(int(time.time()))
 
         #Execute the script
-        cursor.executescript(f'''CREATE TABLE IF NOT EXISTS trades (Id INT PRIMARY KEY AUTOINCREMENT,
+        cursor.executescript(f'''CREATE TABLE IF NOT EXISTS trades (Id INTEGER PRIMARY KEY AUTOINCREMENT,
                              Time INT NOT NULL,
                              Symbol VARCHAR NOT NULL,
                              ClientOrderId VARCHAR NOT NULL,
@@ -81,7 +81,7 @@ def balance_logger(asset:str, balance:float):
         logtime = str(int(time.time()))
 
         #Execute the script
-        cursor.executescript(f'''CREATE TABLE IF NOT EXISTS balances (Id INT PRIMARY KEY AUTOINCREMENT,
+        cursor.executescript(f'''CREATE TABLE IF NOT EXISTS balances (Id INTEGER PRIMARY KEY AUTOINCREMENT,
                              Time INT NOT NULL,
                              Asset VARCHAR NOT NULL,
                              Balance REAL NOT NULL);

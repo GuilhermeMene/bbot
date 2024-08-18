@@ -29,10 +29,13 @@ class Bbot:
         if not debug:
             self.key = os.environ.get('BBOT_KEY')
             self.secret = os.environ.get('BBOT_SECRET')
+        if debug:
+            self.key = os.environ.get('DEBUG_KEY')
+            self.secret = os.environ.get('DEBUG_SECRET')
 
         #Get the client for trade
         if debug:
-            self.client = Client.debug_client()
+            self.client = Client.debug_client(key=self.key, secret=self.secret)
             self.logged = True
         else:
             self.client = Client.auth_client(key=self.key, secret=self.secret)

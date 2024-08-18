@@ -6,6 +6,7 @@ bbot - A Binance bot for Spot trade BTCUSDT
 
 import os
 import sys
+import time
 import pandas as pd
 from bbot import logger as log
 from bbot.client import Client
@@ -69,6 +70,7 @@ class Bbot:
         """
 
         #Get the balances and save in database
+        print("Starting task...")
         btc, usdt = self.get_balances()
         log.balance_logger(asset='BTC', balance=btc)
         log.balance_logger(asset='USDT', balance=usdt)
@@ -94,6 +96,7 @@ class Bbot:
             }
             #Make order
             try:
+                print(f"Making {self.typeOrder} order...")
                 response = self.make_order()
                 log.trade_logger(response=response)
             except Exception as e:
@@ -196,10 +199,37 @@ if __name__ == '__main__':
     else:
         bbot = Bbot()
 
-    #Run first the bbot main
-    bproc = Thread(target=bbot.runTask)
-    bproc.start()
-
-    #Second run the telegram bot
+    #First run the telegram bot
+    print("Starting telegram bot...")
     tproc = Thread(target=telegram_bot.runTelegramBot)
     tproc.start()
+
+    #Run the bot using 1 minute interval
+    while True:
+
+        hold_threading = True
+
+        threads=[]
+        print("*** Creating bot threads... ")
+
+        t = Thread(target=bbot.runTask)
+        t.start()
+        threads.append(t)
+
+        print("*** Joining threads...")
+        hold_threading = False
+        for t in threads:
+            t.join()
+
+        current_time = time.localtime()
+        current_time = time.strftime("%H:%M:%S", current_time)
+        print(f"Time: {current_time}")
+
+        print("*** Sleeping...")
+        time.sleep(65)
+
+
+
+
+
+

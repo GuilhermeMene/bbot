@@ -7,28 +7,9 @@ from binance.spot import Spot
 import time
 import os
 
-def get_debug_API(debug:bool):
-    """
-    Method to read API keys and Secret from env
-    """
-
-    if debug:
-        api = {
-        'api_key': os.environ.get('DEBUG_KEY'),
-        'api_secret': os.environ.get('DEBUG_SECRET')
-        }
-    return api
-
-
 class Client:
 
     def __init__(self, debug=False):
-
-        try:
-            if debug:
-                self.api = get_debug_API(debug)
-        except Exception as e:
-            log.logger(e)
 
         #Get the time from server and compare to local
         self.uclient = self.unauth_client()
@@ -59,16 +40,16 @@ class Client:
         except Exception as e:
             log.logger(f"Authenticated Client error: {e}")
 
-    def debug_client(self):
+    def debug_client(key, secret):
         """
         Get an authenticated client for debug and testing only
         """
         try:
-            self.debugClient = Spot(
-                api_key=self.api['api_key'],
-                api_secret= self.api['api_secret'],
+            debugClient = Spot(
+                api_key=key,
+                api_secret= secret,
                 base_url= 'https://testnet.binance.vision'
             )
-            return self.debugClient
+            return debugClient
         except Exception as e:
             log.logger(f"Debug Client error: {e}")

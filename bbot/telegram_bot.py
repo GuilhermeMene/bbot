@@ -3,15 +3,11 @@ A telegram bot for follow the trade bot activity
 """
 
 import os
-import sys
-#add the library to path
-sys.path.append(os.path.split(os.getcwd())[0])
-
 import asyncio
 from datetime import datetime
 from telebot.async_telebot import AsyncTeleBot
-from bbot.client import Client
-from bbot import logger as log
+from client import Client
+import logger as log
 
 #import bbot
 pdir = os.path.dirname(os.path.realpath(__file__))
@@ -157,14 +153,5 @@ async def set_stop(message):
 async def echo_all(message):
     await bot.send_message(message.chat.id, usage)
 
-async def runTelegramBot():
-    """
-    Method to run the telegram bot from another class
-    """
-    await asyncio.run(bot.polling())
 
-if __name__ == '__main__':
-    """
-    If run as main program
-    """
-    asyncio.run(runTelegramBot())
+asyncio.run(bot.polling())

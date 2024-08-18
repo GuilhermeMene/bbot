@@ -28,7 +28,7 @@ def status_logger(log:str):
     """
     logtime = str(int(time.time()))
 
-    with open(os.path.join(directory, 'Status-logs.txt'), 'r') as stl:
+    with open(os.path.join(directory, 'Status-logs.txt'), 'wr') as stl:
         stl.write(f"{logtime}: {log} \n")
         stl.close()
 

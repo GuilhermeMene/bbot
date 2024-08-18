@@ -157,7 +157,7 @@ async def runTelegramBot():
     """
     Method to run the telegram bot from another class
     """
-    asyncio.run(bot.polling())
+    await asyncio.run(bot.polling())
 
 if __name__ == '__main__':
     """

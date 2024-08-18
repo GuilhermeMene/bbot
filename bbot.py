@@ -82,7 +82,7 @@ class Bbot:
         self.get_klines()
 
         #Get the ticker price
-        self.ticker = float(self.client.ticker(self.symbol)['price'])
+        self.ticker = float(self.client.ticker_price(self.symbol)['price'])
 
         #Calculate the indicators
         self.typeOrder = strategy.getStrategy(self.klines)
@@ -201,10 +201,6 @@ if __name__ == '__main__':
             bbot = Bbot(debug=True)
     else:
         bbot = Bbot()
-
-    #First run the telegram bot
-    print("Starting telegram bot...")
-    telegram_bot.runTelegramBot()
 
     #Run the bot using 1 minute interval
     while True:

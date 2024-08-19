@@ -30,6 +30,10 @@ class Bbot:
         self.btc_balance = 0
         self.usdt_balance = 0
 
+        #Last prices 
+        self.lastBuyPrice = 0
+        self.lastSellPrice = 0
+
         #Get token
         if not debug:
             self.key = os.environ.get('BBOT_KEY')
@@ -119,9 +123,21 @@ class Bbot:
                 #Make order
                 try:
                     print(f"Making {self.typeOrder} order...")
-                    response = self.make_order()
+                    #Check the last price 
+                    if self.typeOrder == 'BUY':
+                        if self.lastSellPrice == 0 or self.lastSellPrice > self.ticker:
+                            response = self.make_order()
+                    else:
+                        if self.lastBuyPrice == 0 or self.lastBuyPrice < self.ticker:
+                            response = self.make_order()
+
                     if type(response) is dict:
+                        if self.typeOrder == 'BUY':
+                            self.lastBuyPrice = self.ticker
+                        else:
+                            self.lastSellPrice = self.ticker
                         log.trade_logger(response=response)
+
                 except Exception as e:
                     log.logger(f"Run Bot task error: {e}")
 
@@ -133,6 +149,7 @@ class Bbot:
             time.sleep(65)
 
         else:
+            print("*** The Bot is stopped.")
             time.sleep(60)
 
     def calcQty(self):

@@ -24,6 +24,15 @@ class Bbot:
         self.symbol = 'BTCUSDT'
         self.logged = False
         self.operational = False
+        self.trade_rate = 0.80
+
+        #Set the varibles of the balance
+        self.btc_balance = 0
+        self.usdt_balance = 0
+
+        #Last prices 
+        self.lastBuyPrice = 0
+        self.lastSellPrice = 0
 
         #Get token
         if not debug:
@@ -51,7 +60,7 @@ class Bbot:
         Method to run the bot on a loop
         """
         while True:
-            from bbot.telegram_bot import STATE
+            from bbot.state import STATE
             if STATE == 0:
                 self.cancel_orders()
                 log.logger("Stopping the bot.")
@@ -71,39 +80,77 @@ class Bbot:
         5. set the params of order;
         6. make order.
         """
+        from bbot import state
 
-        #Get the balances and save in database
-        print("Starting task...")
-        btc, usdt = self.get_balances()
-        log.balance_logger(asset='BTC', balance=btc)
-        log.balance_logger(asset='USDT', balance=usdt)
+        if state.STATE == 1:
 
-        #Get the klines
-        self.get_klines()
+            #Get the balances and save in database
+            print("Starting task...")
+            btc, usdt = self.get_balances()
+            log.balance_logger(btc=btc, usdt=usdt)
 
-        #Get the ticker price
-        self.ticker = float(self.client.ticker(self.symbol)['price'])
+            #Get the klines
+            self.get_klines()
 
-        #Calculate the indicators
-        self.typeOrder = strategy.getStrategy(self.klines)
-        #Make order
-        orderQty = self.calcQty()
+            #Get the ticker price
+            self.ticker = float(self.client.ticker_price(self.symbol)['price'])
 
-        if self.typeOrder != 'Neutral' and self.doTrade:
-            self.params = {
-                'symbol': self.symbol,
-                'side': self.typeOrder,
-                'type': 'MARKET',
-                'timeInForce': 'GTC',
-                'quantity': orderQty,
-            }
-            #Make order
-            try:
-                print(f"Making {self.typeOrder} order...")
-                response = self.make_order()
-                log.trade_logger(response=response)
-            except Exception as e:
-                log.logger(e)
+            #Calculate the indicators
+            self.typeOrder = strategy.getStrategy(self.klines)
+            print(F"Strategy points to {self.typeOrder} order.")
+
+            #Calculate the quantities 
+            orderQty = self.calcQty()
+            print("The quantity of the order: ", orderQty)
+            print("Do trade ? ", self.doTrade)
+
+            if self.typeOrder != 'Neutral' and self.doTrade and orderQty is not None:
+                
+                if self.typeOrder == 'BUY':
+                    self.params = {
+                        'symbol': self.symbol,
+                        'side': self.typeOrder,
+                        'type': 'MARKET',
+                        'quoteOrderQty': round(orderQty, 2),
+                    }
+                else:
+                    self.params = {
+                        'symbol': self.symbol,
+                        'side': self.typeOrder,
+                        'type': 'MARKET',
+                        'quantity': round(orderQty, 4),
+                    }
+                #Make order
+                try:
+                    print(f"Making {self.typeOrder} order...")
+                    #Check the last price 
+                    if self.typeOrder == 'BUY':
+                        if self.lastSellPrice == 0 or self.lastSellPrice < self.ticker:
+                            response = self.make_order()
+                    else:
+                        if self.lastBuyPrice == 0 or self.lastBuyPrice > self.ticker:
+                            response = self.make_order()
+
+                    if type(response) is dict:
+                        if self.typeOrder == 'BUY':
+                            self.lastBuyPrice = self.ticker
+                        else:
+                            self.lastSellPrice = self.ticker
+                        log.trade_logger(response=response)
+
+                except Exception as e:
+                    log.logger(f"Run Bot task error: {e}")
+
+                current_time = time.localtime()
+                current_time = time.strftime("%H:%M:%S", current_time)
+                print(f"Time: {current_time}")
+
+            print("*** Sleeping...")
+            time.sleep(65)
+
+        else:
+            print("*** The Bot is stopped.")
+            time.sleep(60)
 
     def calcQty(self):
         """
@@ -111,19 +158,19 @@ class Bbot:
         """
         self.doTrade = False
         if self.typeOrder == 'SELL':
+            sell_amount = float(self.btc_balance*self.trade_rate)
             if self.btc_balance > 0.000001:
                 self.doTrade = True
-                return float(self.btc_balance)
+                return sell_amount
             else:
                 self.doTrade = False
         else:
-            buy_amount = float((self.usdt_balance / self.ticker)*0.95)
-            if buy_amount > 0.000001:
+            buy_amount = float(self.usdt_balance*self.trade_rate)
+            if buy_amount > 5.0:
                 self.doTrade = True
                 return buy_amount
             else:
                 self.doTrade = False
-
 
     def get_klines(self):
         """
@@ -149,7 +196,7 @@ class Bbot:
             self.klines = pd.DataFrame(klines, columns=column_names)
             self.klines = self.klines.astype(dtype=dtypes)
         except Exception as e:
-            log.logger(e)
+            log.logger(f"Getting klines error: {e}")
 
     def get_balances(self):
         """
@@ -166,7 +213,7 @@ class Bbot:
                 elif coin['asset'] == 'USDT':
                     self.usdt_balance = float(coin['free'])
         except Exception as e:
-            log.logger(e)
+            log.logger(f"Getting balances error: {e}")
 
         return self.btc_balance, self.usdt_balance
 
@@ -176,7 +223,8 @@ class Bbot:
         """
         try:
             resp = self.client.new_order(**self.params)
-            log.trade_logger(resp)
+            if type(resp) is dict:
+                log.trade_logger(resp)
         except ClientError as error:
             log.error_log(error)
 
@@ -193,7 +241,6 @@ class Bbot:
 #Run the bot
 if __name__ == '__main__':
     from threading import Thread
-    from bbot import telegram_bot
 
     #Check the sys args
     if len(sys.argv) > 1:
@@ -201,11 +248,6 @@ if __name__ == '__main__':
             bbot = Bbot(debug=True)
     else:
         bbot = Bbot()
-
-    #First run the telegram bot
-    print("Starting telegram bot...")
-    tproc = Thread(target=telegram_bot.runTelegramBot)
-    tproc.start()
 
     #Run the bot using 1 minute interval
     while True:
@@ -223,16 +265,3 @@ if __name__ == '__main__':
         hold_threading = False
         for t in threads:
             t.join()
-
-        current_time = time.localtime()
-        current_time = time.strftime("%H:%M:%S", current_time)
-        print(f"Time: {current_time}")
-
-        print("*** Sleeping...")
-        time.sleep(65)
-
-
-
-
-
-

@@ -9,6 +9,12 @@ __pycache__/
 #Mac files
 .DS_Store
 
+#Database and logs files
+Balance-logs.txt
+Trade-logs.txt
+Op-logs.txt
+Status-logs.txt
+
 #Folders
 data/
 ml-models/

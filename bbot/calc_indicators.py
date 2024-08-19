@@ -104,9 +104,13 @@ class Indicators:
         self.df['RSI_5'] = ta.rsi(self.df['Close'], length=5)
         self.df['RSI_10'] = ta.rsi(self.df['Close'], length=self.length)
 
-        #BB
+        #BB (5 periods)
         self.bb = ta.bbands(self.df['Close'], length=self.length)
         self.df = pd.concat([self.df, self.bb], axis=1)
+
+        #BB (20 periods)
+        self.bb_twenty = ta.bbands(self.df['Close'], length=20)
+        self.df = pd.concat([self.df, self.bb_twenty], axis=1)
 
         #MACD
         self.macd = ta.macd(self.df['Close'])

@@ -48,6 +48,8 @@ def get_cross(fast:list, slow:list):
             return 'Down'
         elif fast[0] < slow[0] and fast[-1] > slow[-1]:
             return 'Up'
+        else:
+            return 'Neutral'
 
 def get_bb_ind(dataframe:pd.DataFrame):
     """
@@ -57,11 +59,12 @@ def get_bb_ind(dataframe:pd.DataFrame):
     down = 0
     up = 0
     neutral = 0
+
     try:
         for i, row in dataframe.iterrows():
-            if row['Low'] > row['BBM_5_2.0'] and row['High'] > row['BBU_5_2.0']:
+            if row['Low'] > row['BBM_20_2.0'] and row['High'] > row['BBU_20_2.0']:
                 bb_list.append('Down')
-            elif row['High'] < row['BBM_5_2.0'] and row['Low'] < row['BBL_5_2.0']:
+            elif row['High'] < row['BBM_20_2.0'] and row['Low'] < row['BBL_20_2.0']:
                 bb_list.append('Up')
             else:
                 bb_list.append('Neutral')
@@ -74,10 +77,11 @@ def get_bb_ind(dataframe:pd.DataFrame):
             else:
                 neutral += 1
 
-        if down > up:
-            return 'Down'
-        elif up > down:
-            return 'Up'
+        if down > 3 or up > 3:
+            if down > up:
+                return 'Down'
+            elif up > down:
+                return 'Up'
         else:
             return 'Neutral'
 
@@ -104,16 +108,13 @@ def getStrategy(klines:pd.DataFrame):
     tail_df = last_rec.tail(1)
 
     try:
-        sig_five_ten = get_cross(last_rec['SMA_5'].to_list(), last_rec['SMA_10'].to_list())
-        ind_list.append(sig_five_ten) #Append twice due the weight of this indicator
+        sig_five_ten = get_cross(last_rec['SMA_5'].tail(3).to_list(), last_rec['SMA_10'].tail(3).to_list())
         ind_list.append(sig_five_ten)
-        sig_five_twenty = get_cross(last_rec['SMA_5'].to_list(), last_rec['SMA_20'].to_list())
-        ind_list.append(sig_five_twenty) #Append twice due the weight of this indicator
+        sig_five_twenty = get_cross(last_rec['SMA_5'].tail(3).to_list(), last_rec['SMA_20'].tail(3).to_list())
         ind_list.append(sig_five_twenty)
 
         #BBands
-        bb_ind = get_bb_ind(ind_df.tail(10))
-        ind_list.append(bb_ind) #Append twice due the weight of this indicator
+        bb_ind = get_bb_ind(ind_df.tail(5))
         ind_list.append(bb_ind)
 
         #SO
@@ -147,7 +148,9 @@ def getStrategy(klines:pd.DataFrame):
 
     #get the machine learning indicators
     try:
-        col_to_drop = ['OpenTime', 'Diff_1', 'qAssetVol', 'TbuybAssetVol', 'TbuyqAssetVol', 'Ignore', 'Trend_1']
+        col_to_drop = ['OpenTime', 'Diff_1', 'qAssetVol', 'TbuybAssetVol', 
+                       'TbuyqAssetVol', 'Ignore', 'Trend_1', 'BBL_20_2.0', 
+                       'BBM_20_2.0', 'BBU_20_2.0', 'BBB_20_2.0', 'BBP_20_2.0']
         last = last_rec.drop(labels=col_to_drop, axis=1)
         last = last.tail(1)
         last = np.array(last.values)
@@ -185,7 +188,6 @@ def getStrategy(klines:pd.DataFrame):
     except Exception as e:
         log.logger(f"Strategy error: {e}")
 
-
     try:
         if len(ind_list) <= 0:
             log.logger("Strategy, a error occurred with strategy.")
@@ -199,11 +201,14 @@ def getStrategy(klines:pd.DataFrame):
                     down += 1
                 else:
                     up += 1
-            if up > down:
-                return 'BUY'
-            elif up == down:
-                return 'Neutral'
+            min_sig = int(len(ind_list)*0.7)
+            if up > min_sig and down > min_sig:
+                if up > down:
+                    return 'BUY'
+                elif up < down:
+                    return 'SELL'
             else:
-                return 'SELL'
+                return 'Neutral'
+            
     except Exception as e:
         log.logger(e)

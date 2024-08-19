@@ -142,6 +142,8 @@ async def set_stop(message):
         text = "The bot will be stopped in the next loop (~ 1 minute)."
     except:
         text = "An error occurred. The bot will continue running."
+    
+    await bot.send_message(message.chat.id, text)
 
 #Reply for any other message
 @bot.message_handler(func=lambda msg: True)

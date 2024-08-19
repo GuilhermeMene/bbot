@@ -24,7 +24,7 @@ class Bbot:
         self.symbol = 'BTCUSDT'
         self.logged = False
         self.operational = False
-        self.trade_rate = 0.70
+        self.trade_rate = 0.80
 
         #Set the varibles of the balance
         self.btc_balance = 0
@@ -99,36 +99,36 @@ class Bbot:
             self.typeOrder = strategy.getStrategy(self.klines)
             print(F"Strategy points to {self.typeOrder} order.")
 
-            orderQty = round(self.calcQty(), 4)
-
+            #Calculate the quantities 
+            orderQty = self.calcQty()
             print("The quantity of the order: ", orderQty)
             print("Do trade ? ", self.doTrade)
 
-            if self.typeOrder != 'Neutral' and self.doTrade:
-
+            if self.typeOrder != 'Neutral' and self.doTrade and orderQty is not None:
+                
                 if self.typeOrder == 'BUY':
                     self.params = {
                         'symbol': self.symbol,
                         'side': self.typeOrder,
                         'type': 'MARKET',
-                        'quoteOrderQty': orderQty,
+                        'quoteOrderQty': round(orderQty, 2),
                     }
                 else:
                     self.params = {
                         'symbol': self.symbol,
                         'side': self.typeOrder,
                         'type': 'MARKET',
-                        'quantity': orderQty,
+                        'quantity': round(orderQty, 4),
                     }
                 #Make order
                 try:
                     print(f"Making {self.typeOrder} order...")
                     #Check the last price 
                     if self.typeOrder == 'BUY':
-                        if self.lastSellPrice == 0 or self.lastSellPrice > self.ticker:
+                        if self.lastSellPrice == 0 or self.lastSellPrice < self.ticker:
                             response = self.make_order()
                     else:
-                        if self.lastBuyPrice == 0 or self.lastBuyPrice < self.ticker:
+                        if self.lastBuyPrice == 0 or self.lastBuyPrice > self.ticker:
                             response = self.make_order()
 
                     if type(response) is dict:
@@ -171,7 +171,6 @@ class Bbot:
                 return buy_amount
             else:
                 self.doTrade = False
-
 
     def get_klines(self):
         """

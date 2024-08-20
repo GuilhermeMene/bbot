@@ -7,12 +7,12 @@ bbot - A Binance bot for Spot trade BTCUSDT
 import os
 import sys
 import time
+import importlib as imp
 import pandas as pd
 from bbot import logger as log
 from bbot.client import Client
 from bbot import connection_checker as con
 from bbot import strategy
-from binance.spot import Spot
 from binance.error import ClientError
 
 
@@ -24,13 +24,12 @@ class Bbot:
         self.symbol = 'BTCUSDT'
         self.logged = False
         self.operational = False
-        self.trade_rate = 0.80
 
         #Set the varibles of the balance
         self.btc_balance = 0
         self.usdt_balance = 0
 
-        #Last prices 
+        #Last prices
         self.lastBuyPrice = 0
         self.lastSellPrice = 0
 
@@ -60,13 +59,14 @@ class Bbot:
         Method to run the bot on a loop
         """
         while True:
-            from bbot.state import STATE
-            if STATE == 0:
+            par = self.get_params()
+            state = par[0]
+            if state == 0:
                 self.cancel_orders()
                 log.logger("Stopping the bot.")
                 continue
             else:
-                log.status_logger(f"Operational state: {self.operational} : Ping: {self.ping}")
+                log.status_logger(f"Operational state: {self.operational} : Ping: {self.ping}: State: {state}")
                 self.runBot()
 
     def runBot(self):
@@ -80,9 +80,13 @@ class Bbot:
         5. set the params of order;
         6. make order.
         """
-        from bbot import state
+        par = self.get_params()
+        state = par[0]
 
-        if state.STATE == 1:
+        if state == 1:
+
+            #Get the percentage of the asset
+            self.trade_rate = round(float(par[1]), 2)
 
             #Get the balances and save in database
             print("Starting task...")
@@ -99,13 +103,13 @@ class Bbot:
             self.typeOrder = strategy.getStrategy(self.klines)
             print(F"Strategy points to {self.typeOrder} order.")
 
-            #Calculate the quantities 
+            #Calculate the quantities
             orderQty = self.calcQty()
             print("The quantity of the order: ", orderQty)
             print("Do trade ? ", self.doTrade)
 
             if self.typeOrder != 'Neutral' and self.doTrade and orderQty is not None:
-                
+
                 if self.typeOrder == 'BUY':
                     self.params = {
                         'symbol': self.symbol,
@@ -123,7 +127,7 @@ class Bbot:
                 #Make order
                 try:
                     print(f"Making {self.typeOrder} order...")
-                    #Check the last price 
+                    #Check the last price
                     if self.typeOrder == 'BUY':
                         if self.lastSellPrice == 0 or self.lastSellPrice < self.ticker:
                             response = self.make_order()
@@ -151,6 +155,17 @@ class Bbot:
         else:
             print("*** The Bot is stopped.")
             time.sleep(60)
+
+    def get_params(self):
+        """
+        Method to get the parameters of the bot
+        """
+        bot_params = []
+        with open('.params', 'r') as p:
+            for line in p:
+                bot_params.append[line.strip()]
+
+        return bot_params
 
     def calcQty(self):
         """

@@ -81,7 +81,7 @@ class Bbot:
         6. make order.
         """
         par = self.get_params()
-        state = par[0]
+        state = int(par[0])
 
         if state == 1:
 

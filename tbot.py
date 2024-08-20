@@ -87,7 +87,8 @@ usage = 'The usage of the bot is: \n \
             /balance: return the balances of BTC and USDT from the current wallet; \n \
             /last_trade: return the last efective trade; \n \
             /ping: return the current ping from the bot and Binance; \n \
-            /all_ind: Set all indicators to be used in the bot;\
+            /all_ind: Set all indicators to be used in the bot; \
+            /partial_ind: Set only the SMA-BB-ML Indicators;\
             /inc_trate: Increase by 0.1 the trade rate; \
             /dec_trate: Decrease by 0.1 the trade rate; \
             /stop: stop the tradebot; \
@@ -234,6 +235,21 @@ async def set_all_indicators(message):
     try:
         get_set_params('All', 2)
         text = "All indicators will be considered in the next loop."
+
+    except Exception as e:
+        text = f'An error occurred. Only the SMA, BB and ML indicartors will be used. Error: {e}'
+
+    await bot.send_message(message.chat.id, text)
+
+#Set the parameters trade
+@bot.message_handler(commands=['partial_ind'])
+async def set_partial_indicators(message):
+    """
+    Set Partial indicators
+    """
+    try:
+        get_set_params('SMA-BB-ML', 2)
+        text = "Partial indicators will be considered in the next loop."
 
     except Exception as e:
         text = f'An error occurred. Only the SMA, BB and ML indicartors will be used. Error: {e}'

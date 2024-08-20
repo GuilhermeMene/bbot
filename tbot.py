@@ -36,8 +36,6 @@ def get_set_params(data, pos):
     #Replace the value
     par[pos] = data
 
-    print(par)
-
     with open('.params', 'w+') as fout:
         for p in par:
             fout.write(str(p) + '\n')

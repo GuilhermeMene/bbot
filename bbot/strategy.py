@@ -119,16 +119,19 @@ def getStrategy(klines:pd.DataFrame):
     tail_df = last_rec.tail(1)
 
     try:
+        #SMA 5 x 10
         sig_five_ten = get_cross(last_rec['SMA_5'].tail(3).to_list(), last_rec['SMA_10'].tail(3).to_list())
         ind_list.append(sig_five_ten)
-        sig_five_twenty = get_cross(last_rec['SMA_5'].tail(3).to_list(), last_rec['SMA_20'].tail(3).to_list())
-        ind_list.append(sig_five_twenty)
 
         #BBands
         bb_ind = get_bb_ind(ind_df.tail(5))
         ind_list.append(bb_ind)
 
         if par[2] == 'All':
+
+            #SMA 5 x 20
+            sig_five_twenty = get_cross(last_rec['SMA_5'].tail(3).to_list(), last_rec['SMA_20'].tail(3).to_list())
+            ind_list.append(sig_five_twenty)
 
             #SO
             if tail_df['STOCHk_14_3_3'].values < 20 or tail_df['STOCHd_14_3_3'].values < 20:

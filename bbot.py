@@ -163,7 +163,7 @@ class Bbot:
         bot_params = []
         with open('.params', 'r') as p:
             for line in p:
-                bot_params.append[line.strip()]
+                bot_params.append(line.strip())
 
         return bot_params
 

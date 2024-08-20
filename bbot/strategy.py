@@ -6,8 +6,19 @@ from bbot import logger as log
 from bbot.calc_indicators import Indicators
 import pandas as pd
 import os
+import sys
 import pickle
 import numpy as np
+
+#Append the bbot path to the system
+sys.path.append(os.path.split(os.getcwd())[0])
+
+par = []
+#Get the parameters
+with open('.params', 'r') as p:
+    for line in p:
+        par.append(line)
+
 
 def get_trend(data:list):
     """
@@ -117,30 +128,32 @@ def getStrategy(klines:pd.DataFrame):
         bb_ind = get_bb_ind(ind_df.tail(5))
         ind_list.append(bb_ind)
 
-        #SO
-        if tail_df['STOCHk_14_3_3'].values < 20 or tail_df['STOCHd_14_3_3'].values < 20:
-            ind_list.append('Up')
-        elif tail_df['STOCHk_14_3_3'].values > 80 or tail_df['STOCHd_14_3_3'].values > 80:
-            ind_list.append('Down')
-        else:
-            ind_list.append('Neutral')
+        if par[2] == 'All':
 
-        #RSI
-        if tail_df['RSI_5'].values < 30:
-            ind_list.append('Up')
-        elif tail_df['RSI_5'].values > 70:
-            ind_list.append('Down')
-        else:
-            ind_list.append('Neutral')
+            #SO
+            if tail_df['STOCHk_14_3_3'].values < 20 or tail_df['STOCHd_14_3_3'].values < 20:
+                ind_list.append('Up')
+            elif tail_df['STOCHk_14_3_3'].values > 80 or tail_df['STOCHd_14_3_3'].values > 80:
+                ind_list.append('Down')
+            else:
+                ind_list.append('Neutral')
 
-        #AO
-        ao = get_trend(last_rec['AO'].tail(3).to_list())
-        if ao == 'Down':
-            ind_list.append('Down')
-        elif ao == 'Up':
-            ind_list.append('Up')
-        else:
-            ind_list.append('Neutral')
+            #RSI
+            if tail_df['RSI_5'].values < 30:
+                ind_list.append('Up')
+            elif tail_df['RSI_5'].values > 70:
+                ind_list.append('Down')
+            else:
+                ind_list.append('Neutral')
+
+            #AO
+            ao = get_trend(last_rec['AO'].tail(3).to_list())
+            if ao == 'Down':
+                ind_list.append('Down')
+            elif ao == 'Up':
+                ind_list.append('Up')
+            else:
+                ind_list.append('Neutral')
 
     except Exception as e:
         log.logger(f"Classical indicators error: {e}")
@@ -148,8 +161,8 @@ def getStrategy(klines:pd.DataFrame):
 
     #get the machine learning indicators
     try:
-        col_to_drop = ['OpenTime', 'Diff_1', 'qAssetVol', 'TbuybAssetVol', 
-                       'TbuyqAssetVol', 'Ignore', 'Trend_1', 'BBL_20_2.0', 
+        col_to_drop = ['OpenTime', 'Diff_1', 'qAssetVol', 'TbuybAssetVol',
+                       'TbuyqAssetVol', 'Ignore', 'Trend_1', 'BBL_20_2.0',
                        'BBM_20_2.0', 'BBU_20_2.0', 'BBB_20_2.0', 'BBP_20_2.0']
         last = last_rec.drop(labels=col_to_drop, axis=1)
         last = last.tail(1)
@@ -189,6 +202,7 @@ def getStrategy(klines:pd.DataFrame):
         log.logger(f"Strategy error: {e}")
 
     try:
+
         if len(ind_list) <= 0:
             log.logger("Strategy, a error occurred with strategy.")
 
@@ -209,6 +223,6 @@ def getStrategy(klines:pd.DataFrame):
                     return 'SELL'
             else:
                 return 'Neutral'
-            
+
     except Exception as e:
         log.logger(e)

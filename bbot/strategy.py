@@ -8,6 +8,7 @@ import pandas as pd
 import os
 import sys
 import pickle
+import math
 import numpy as np
 
 #Append the bbot path to the system
@@ -24,12 +25,12 @@ def save_ind(indicators):
     Method for log the data file
     """
 
-    with open('indicators.txt', 'r') as file:
+    with open('indicators.txt', 'a') as file:
         for line in indicators:
             file.write(f"{line}:")
 
-    file.write("\n")
-    file.close()
+        file.write("\n")
+        file.close()
 
 def get_trend(data:list):
     """
@@ -232,10 +233,10 @@ def getStrategy(klines:pd.DataFrame):
                 elif ind == 'Up':
                     up += 1
 
-            min_sig = int(len(ind_list)*0.6)
+            min_sig = math.floor(len(ind_list)*0.6)
 
             #Save the indicators
-
+            save_ind(ind_list)
 
             if up >= min_sig or down >= min_sig:
                 if up > down:

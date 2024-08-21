@@ -19,6 +19,17 @@ with open('.params', 'r') as p:
     for line in p:
         par.append(line)
 
+def save_ind(indicators):
+    """
+    Method for log the data file
+    """
+
+    with open('indicators.txt', 'r') as file:
+        for line in indicators:
+            file.write(f"{line}:")
+
+    file.write("\n")
+    file.close()
 
 def get_trend(data:list):
     """
@@ -88,7 +99,7 @@ def get_bb_ind(dataframe:pd.DataFrame):
             else:
                 neutral += 1
 
-        if down > 3 or up > 3:
+        if down >= 2 or up >= 2:
             if down > up:
                 return 'Down'
             elif up > down:
@@ -121,6 +132,7 @@ def getStrategy(klines:pd.DataFrame):
     try:
         #SMA 5 x 10
         sig_five_ten = get_cross(last_rec['SMA_5'].tail(3).to_list(), last_rec['SMA_10'].tail(3).to_list())
+        ind_list.append(sig_five_ten)
         ind_list.append(sig_five_ten)
 
         #BBands
@@ -164,6 +176,7 @@ def getStrategy(klines:pd.DataFrame):
 
     #get the machine learning indicators
     try:
+
         col_to_drop = ['OpenTime', 'Diff_1', 'qAssetVol', 'TbuybAssetVol',
                        'TbuyqAssetVol', 'Ignore', 'Trend_1', 'BBL_20_2.0',
                        'BBM_20_2.0', 'BBU_20_2.0', 'BBB_20_2.0', 'BBP_20_2.0']
@@ -216,10 +229,15 @@ def getStrategy(klines:pd.DataFrame):
             for ind in ind_list:
                 if ind == 'Down':
                     down += 1
-                else:
+                elif ind == 'Up':
                     up += 1
-            min_sig = int(len(ind_list)*0.7)
-            if up > min_sig and down > min_sig:
+
+            min_sig = int(len(ind_list)*0.6)
+
+            #Save the indicators
+
+
+            if up >= min_sig or down >= min_sig:
                 if up > down:
                     return 'BUY'
                 elif up < down:

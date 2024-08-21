@@ -66,7 +66,7 @@ def get_trade_rate():
 
     return float(par[1])
 
-def get_ind():
+def get_ind_type():
     """
     Method for the get then trade rate
     """
@@ -79,16 +79,29 @@ def get_ind():
 
     return par[2]
 
+def get_ind():
+    """
+    Method for get last indicator
+    """
+
+    with open('indicators.txt', 'r') as f:
+        for line in f:
+            pass
+        last = line
+
+    return last
+
 #Set the usage wiki
 usage = 'The usage of the bot is: \n \
-            /status: return the status of the bbot (Operational: true of false) and the time of the last loop; \n \
-            /balance: return the balances of BTC and USDT from the current wallet; \n \
-            /last_trade: return the last efective trade; \n \
-            /ping: return the current ping from the bot and Binance; \n \
+            /status: Return the status of the bbot (Operational: true of false) and the time of the last loop; \n \
+            /balance: Return the balances of BTC and USDT from the current wallet; \n \
+            /last_trade: Return the last efective trade; \n \
+            /ping: Return the current ping from the bot and Binance; \n \
             /all_ind: Set all indicators to be used in the bot; \
             /partial_ind: Set only the SMA-BB-ML Indicators;\
             /inc_trate: Increase by 0.1 the trade rate; \
             /dec_trate: Decrease by 0.1 the trade rate; \
+            /last_ind: Return the last indicators; \
             /stop: stop the tradebot; \
             /restart: Restart the bot.'
 
@@ -121,11 +134,11 @@ async def get_status(message):
         else:
             st = "Stopped"
 
-        text = f"The operational state is : {st} \n \
+        text = f'The operational state is : {st} \n \
                 The operational condition is: {status[2]} \n \
                 The last event was recorded at: {status[0]} \n \
                 The trade rate is: {get_trade_rate()} \n \
-                The the Indicators is: {get_ind()}."
+                The the Indicators is: {get_ind_type()}.'
 
     except Exception as e:
         text = f'An error occurred. The status cannot be defined. Error: {e}'
@@ -144,7 +157,7 @@ async def get_balance(message):
                 pass
             last_line = list(line.split(','))
 
-        text = f"BTC balance: {last_line[1]}, and USDT balance: {last_line[2]}"
+        text = f'BTC balance: {last_line[1]}, and USDT balance: {last_line[2]}'
 
     except Exception as e:
         text = f'An error occurred. The balance cannot be accessed. Error: {e}'
@@ -161,7 +174,7 @@ async def get_last_trade(message):
         last_trade = log.get_last_trade()
 
         if last_trade == "File not found":
-            text = "The trade record not exists."
+            text = 'The trade record not exists.'
 
         else:
             text = f"Time: {last_trade[0]} \n \
@@ -190,37 +203,9 @@ async def get_ping(message):
             last_status = line
             status = last_status.split(':')
 
-        text = f"The last ping recorded is: {status[4]}."
+        text = f'The last ping recorded is: {status[4]}.'
     except Exception as e:
         text = f'An error occurred. The status cannot be defined. Error: {e}'
-
-    await bot.send_message(message.chat.id, text)
-
-#Set the STOP
-@bot.message_handler(commands=['stop'])
-async def set_stop(message):
-    """
-    Set the stop for the BOT
-    """
-    try:
-        get_set_params(0, 0)
-        text = "The bot will be stopped in the next loop (~ 1 minute)."
-    except Exception as e:
-        text = f'An error occurred. The bot will continue running. Error: {e}'
-
-    await bot.send_message(message.chat.id, text)
-
-#Set the RESTART
-@bot.message_handler(commands=['restart'])
-async def set_restart(message):
-    """
-    Set the restart for the BOT
-    """
-    try:
-        get_set_params(1, 0)
-        text = "The bot will be resumed in the next loop (~ 1 minute)."
-    except Exception as e:
-        text = f'An error occurred. The bot will continue running. Error: {e}'
 
     await bot.send_message(message.chat.id, text)
 
@@ -232,7 +217,7 @@ async def set_all_indicators(message):
     """
     try:
         get_set_params('All', 2)
-        text = "All indicators will be considered in the next loop."
+        text = 'All indicators will be considered in the next loop.'
 
     except Exception as e:
         text = f'An error occurred. Only the SMA, BB and ML indicartors will be used. Error: {e}'
@@ -247,7 +232,7 @@ async def set_partial_indicators(message):
     """
     try:
         get_set_params('SMA-BB-ML', 2)
-        text = "Partial indicators will be considered in the next loop."
+        text = 'Partial indicators will be considered in the next loop.'
 
     except Exception as e:
         text = f'An error occurred. Only the SMA, BB and ML indicartors will be used. Error: {e}'
@@ -264,7 +249,7 @@ async def increase_trate(message):
         trate = get_trade_rate()
         get_set_params(round(trate+0.1, 2), 1)
 
-        text = F"The new Trade rate will be: {round(trate+0.1, 2)}."
+        text = f'The new Trade rate will be: {round(trate+0.1, 2)}.'
 
     except Exception as e:
         text = f'An error occurred. The current trade rate will remain. Error: {e}'
@@ -281,10 +266,52 @@ async def decrease_trate(message):
         trate = get_trade_rate()
         get_set_params(round(trate-0.1, 2), 1)
 
-        text = F"The new Trade rate will be: {round(trate-0.1, 2)}."
+        text = F'The new Trade rate will be: {round(trate-0.1, 2)}.'
 
     except Exception as e:
         text = f'An error occurred. The current trade rate will remain. Error: {e}'
+
+    await bot.send_message(message.chat.id, text)
+
+#Get the last indicator
+@bot.message_handler(commands=['last_ind'])
+async def get_last_ind(message):
+    """
+    Method for get last indicator
+    """
+    try:
+        ind = get_ind()
+        text = f'The last indicators are: {ind}'
+    except Exception as e:
+        text = f'An error occurred. The last indicator cannot be defined.'
+
+    await bot.send_message(message.chat.id, text)
+
+#Set the STOP
+@bot.message_handler(commands=['stop'])
+async def set_stop(message):
+    """
+    Set the stop for the BOT
+    """
+    try:
+        get_set_params(0, 0)
+        text = 'The bot will be stopped in the next loop (~ 1 minute).'
+    except Exception as e:
+        text = f'An error occurred. The bot will continue running. Error: {e}'
+
+    await bot.send_message(message.chat.id, text)
+
+#Set the RESTART
+@bot.message_handler(commands=['restart'])
+async def set_restart(message):
+    """
+    Set the restart for the BOT
+    """
+    try:
+        get_set_params(1, 0)
+        text = 'The bot will be resumed in the next loop (~ 1 minute).'
+    except Exception as e:
+        text = f'An error occurred. The bot will continue running. Error: {e}'
 
     await bot.send_message(message.chat.id, text)
 
@@ -292,7 +319,6 @@ async def decrease_trate(message):
 @bot.message_handler(func=lambda msg: True)
 async def echo_all(message):
     await bot.send_message(message.chat.id, usage)
-
 
 print("Running the bot...")
 asyncio.run(bot.polling())

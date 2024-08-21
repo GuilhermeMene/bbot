@@ -129,17 +129,17 @@ class Bbot:
                     print(f"Making {self.typeOrder} order...")
                     #Check the last price
                     if self.typeOrder == 'BUY':
-                        if self.lastSellPrice == 0 or self.lastSellPrice < self.ticker:
+                        if self.lastSellPrice == 0 or self.lastSellPrice < (self.ticker*0.998):
                             response = self.make_order()
                     else:
-                        if self.lastBuyPrice == 0 or self.lastBuyPrice > self.ticker:
+                        if self.lastBuyPrice == 0 or self.lastBuyPrice > (self.ticker*1.002):
                             response = self.make_order()
 
                     if type(response) is dict:
                         if self.typeOrder == 'BUY':
-                            self.lastBuyPrice = self.ticker
+                            self.lastBuyPrice = float(response['fills'][0]['price'])
                         else:
-                            self.lastSellPrice = self.ticker
+                            self.lastSellPrice = float(response['fills'][0]['price'])
                         log.trade_logger(response=response)
 
                 except Exception as e:

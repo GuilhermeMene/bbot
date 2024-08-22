@@ -90,7 +90,7 @@ class Bbot:
         5. set the params of order;
         6. make order.
         """
-        del par
+
         par = self.get_params()
         state = int(par[0])
         print("The bot state (1 is running and 0 is stopped): ", state)
@@ -178,6 +178,8 @@ class Bbot:
                 current_time = time.strftime("%H:%M:%S", current_time)
                 print(f"Time: {current_time}")
 
+            #Force delete the par variable
+            del par
             print("*** Sleeping...")
             time.sleep(65)
 

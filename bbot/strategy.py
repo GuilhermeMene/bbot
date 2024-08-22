@@ -20,6 +20,9 @@ with open('.params', 'r') as p:
     for line in p:
         par.append(line)
 
+typeInd = str(par[2])
+typeInd = typeInd.strip()
+
 def save_ind(indicators):
     """
     Method for log the data file
@@ -109,7 +112,42 @@ def get_bb_ind(dataframe:pd.DataFrame):
             return 'Neutral'
 
     except Exception as e:
-        log.logger(e)
+        log.logger(f"Bollinger Bands calculation error: {e}")
+
+def get_ml_model(data:pd.DataFrame):
+    """
+    Method for getting the machine learning based indicators
+    """
+
+    col_to_drop = ['OpenTime', 'Diff_1', 'qAssetVol', 'TbuybAssetVol',
+                   'TbuyqAssetVol', 'Ignore', 'Trend_1', 'BBL_20_2.0',
+                   'BBM_20_2.0', 'BBU_20_2.0', 'BBB_20_2.0', 'BBP_20_2.0']
+    last = data.drop(labels=col_to_drop, axis=1)
+    last = last.tail(1)
+    last = np.array(last.values)
+    last = last.reshape(1, -1)
+
+    gbfile = os.environ.get('GB_MODEL')
+    hgbfile = os.environ.get('HGB_MODEL')
+
+    #Get using Gradient Boosting
+    with open(gbfile, 'rb') as gb:
+        gbmodel = pickle.load(gb)
+        gb.close()
+    gb_ind = gbmodel.predict(last)
+
+    #Get using Histogram-based Gradient Boosting
+    with open(hgbfile, 'rb') as hgb:
+        hgbmodel = pickle.load(hgb)
+        hgb.close()
+    hgb_ind = hgbmodel.predict(last)
+
+    if gb_ind[0] == 0 and hgb_ind[0] == 0:
+        return 'Down'
+    elif gb_ind[0] == 1 and hgb_ind[0] == 1:
+        return 'Up'
+    else:
+        return 'Neutral'
 
 def getStrategy(klines:pd.DataFrame):
     """
@@ -131,16 +169,24 @@ def getStrategy(klines:pd.DataFrame):
     tail_df = last_rec.tail(1)
 
     try:
-        #SMA 5 x 10
-        sig_five_ten = get_cross(last_rec['SMA_5'].tail(3).to_list(), last_rec['SMA_10'].tail(3).to_list())
-        ind_list.append(sig_five_ten)
-        ind_list.append(sig_five_ten)
+        if typeInd == 'SMA':
+            #SMA 5 x 10
+            sig_five_ten = get_cross(last_rec['SMA_5'].tail(3).to_list(), last_rec['SMA_10'].tail(3).to_list())
+            ind_list.append(sig_five_ten)
 
-        #BBands
-        bb_ind = get_bb_ind(ind_df.tail(5))
-        ind_list.append(bb_ind)
+        elif typeInd == 'BB':
+            #BBands
+            bb_ind = get_bb_ind(ind_df.tail(3))
+            ind_list.append(bb_ind)
 
-        if par[2] == 'All':
+        elif typeInd == 'All':
+            #SMA 5 x 10
+            sig_five_ten = get_cross(last_rec['SMA_5'].tail(3).to_list(), last_rec['SMA_10'].tail(3).to_list())
+            ind_list.append(sig_five_ten)
+
+            #BBands
+            bb_ind = get_bb_ind(ind_df.tail(5))
+            ind_list.append(bb_ind)
 
             #SMA 5 x 20
             sig_five_twenty = get_cross(last_rec['SMA_5'].tail(3).to_list(), last_rec['SMA_20'].tail(3).to_list())
@@ -174,52 +220,13 @@ def getStrategy(klines:pd.DataFrame):
     except Exception as e:
         log.logger(f"Classical indicators error: {e}")
 
-
     #get the machine learning indicators
     try:
-
-        col_to_drop = ['OpenTime', 'Diff_1', 'qAssetVol', 'TbuybAssetVol',
-                       'TbuyqAssetVol', 'Ignore', 'Trend_1', 'BBL_20_2.0',
-                       'BBM_20_2.0', 'BBU_20_2.0', 'BBB_20_2.0', 'BBP_20_2.0']
-        last = last_rec.drop(labels=col_to_drop, axis=1)
-        last = last.tail(1)
-        last = np.array(last.values)
-        last = last.reshape(1, -1)
-
-        gbfile = os.environ.get('GB_MODEL')
-        hgbfile = os.environ.get('HGB_MODEL')
-
-        #Get using Gradient Boosting
-        with open(gbfile, 'rb') as gb:
-            gbmodel = pickle.load(gb)
-            gb.close()
-        gb_ind = gbmodel.predict(last)
-
-        if gb_ind[0] == 0:
-            ind_list.append('Down')
-        elif gb_ind[0] == 1:
-            ind_list.append('Up')
-        else:
-            pass
-
-        #Get using Histogram-based Gradient Boosting
-        with open(hgbfile, 'rb') as hgb:
-            hgbmodel = pickle.load(hgb)
-            hgb.close()
-        hgb_ind = hgbmodel.predict(last)
-
-        if hgb_ind[0] == 0:
-            ind_list.append('Down')
-        elif hgb_ind[0] == 1:
-            ind_list.append('Up')
-        else:
-            pass
-
+        ind_list.append(get_ml_model(last_rec))
     except Exception as e:
         log.logger(f"Strategy error: {e}")
 
     try:
-
         if len(ind_list) <= 0:
             log.logger("Strategy, a error occurred with strategy.")
 
@@ -233,18 +240,26 @@ def getStrategy(klines:pd.DataFrame):
                 elif ind == 'Up':
                     up += 1
 
-            min_sig = math.floor(len(ind_list)*0.6)
-
             #Save the indicators
             save_ind(ind_list)
 
-            if up >= min_sig or down >= min_sig:
-                if up > down:
+            print(ind_list)
+
+            if typeInd == 'BB' or typeInd == 'SMA':
+                if up >= 2:
                     return 'BUY'
-                elif up < down:
+                elif down >= 2:
                     return 'SELL'
+                else:
+                    return 'Neutral'
             else:
-                return 'Neutral'
+                if up >= 5 or down >= 5:
+                    if up > down:
+                        return 'BUY'
+                    elif up < down:
+                        return 'SELL'
+                else:
+                    return 'Neutral'
 
     except Exception as e:
         log.logger(e)
